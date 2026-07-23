@@ -1,0 +1,28 @@
+<script>
+var UIForm = {
+  field: function (label, inputHtml) {
+    return '<div class="form-group"><label class="form-label">' + label + '</label>' + inputHtml + '</div>';
+  },
+  textInput: function (name, value, placeholder) {
+    return '<input class="form-input" name="' + name + '" value="' + (value || '') + '" placeholder="' + (placeholder || '') + '" />';
+  },
+  select: function (name, options, selectedValue) {
+    var optionsHtml = options.map(function (opt) {
+      var selected = opt.value === selectedValue ? ' selected' : '';
+      return '<option value="' + opt.value + '"' + selected + '>' + opt.label + '</option>';
+    }).join('');
+    return '<select class="form-input" name="' + name + '">' + optionsHtml + '</select>';
+  },
+  dateInput: function (name, value) {
+    return '<input class="form-input" type="date" name="' + name + '" value="' + (value || '') + '" />';
+  },
+  textarea: function (name, value, rows) {
+    return '<textarea class="form-input" name="' + name + '" rows="' + (rows || 3) + '">' + (value || '') + '</textarea>';
+  },
+  serialize: function (formEl) {
+    var data = {};
+    formEl.querySelectorAll('[name]').forEach(function (el) { data[el.name] = el.value; });
+    return data;
+  }
+};
+</script>

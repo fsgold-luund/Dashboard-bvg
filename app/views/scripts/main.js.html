@@ -1,0 +1,173 @@
+<script>
+// Khởi tạo app dạng SPA 1 trang: quyết định hiển thị login hay dashboard dựa trên
+// auth.getSession (không dựa vào doGet, vì Apps Script webapp không có session server-side
+// theo request — xem ghi chú trong app/Main.gs). Điều hướng giữa các module không reload trang.
+var App = (function () {
+  var currentSession = null;
+  var MODULE_LABELS = {
+    dashboard: 'Dashboard', task: 'Công việc', employee: 'Nhân viên',
+    company: 'Công ty', team: 'Team', report: 'Báo cáo', setting: 'Cấu hình'
+  };
+
+  function showLogin() {
+    document.getElementById('view-login').classList.remove('hidden');
+    document.getElementById('view-app').classList.add('hidden');
+  }
+
+  function applySidebarPermissions(session) {
+    Utils.qsa('.nav-item').forEach(function (el) {
+      var requiredPermission = el.getAttribute('data-permission');
+      if (requiredPermission && session.permissions.indexOf(requiredPermission) === -1) {
+        el.classList.add('hidden');
+      }
+    });
+  }
+
+  function navigateTo(moduleName) {
+    Utils.qsa('.app-module').forEach(function (el) { el.classList.add('hidden'); });
+    var target = document.getElementById('module-' + moduleName);
+    if (target) target.classList.remove('hidden');
+
+    Utils.qsa('.nav-item').forEach(function (el) {
+      el.classList.toggle('active', el.getAttribute('data-module') === moduleName);
+    });
+
+    if (window.UINavbar) UINavbar.setBreadcrumb(['Trang chủ', MODULE_LABELS[moduleName] || moduleName]);
+
+    if (moduleName === 'dashboard' && window.DashboardModule) DashboardModule.load();
+    if (moduleName === 'task' && window.TaskModule) TaskModule.load();
+    if (moduleName === 'employee' && window.EmployeeModule) EmployeeModule.load();
+    if (moduleName === 'company' && window.CompanyModule) CompanyModule.load();
+    if (moduleName === 'team' && window.TeamModule) TeamModule.load();
+    if (moduleName === 'report' && window.ReportModule) ReportModule.load();
+
+    document.querySelector('.app-sidebar').classList.remove('open');
+  }
+
+  function showDashboard(session) {
+    currentSession = session;
+    document.getElementById('view-login').classList.add('hidden');
+    document.getElementById('view-app').classList.remove('hidden');
+    var nameEl = document.getElementById('user-fullname');
+    if (nameEl) nameEl.textContent = session.fullName || session.email;
+    var avatarEl = document.getElementById('user-avatar');
+    if (avatarEl) avatarEl.textContent = (session.fullName || session.email || '?').trim().charAt(0).toUpperCase();
+    applySidebarPermissions(session);
+    navigateTo('dashboard');
+  }
+
+  function logout() {
+    Api.call('auth.logout').then(finishLogout).catch(finishLogout);
+  }
+
+  function finishLogout() {
+    Api.clearToken();
+    currentSession = null;
+    showLogin();
+  }
+
+  function toggleTheme() {
+    var root = document.documentElement;
+    var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    localStorage.setItem('app_theme', next);
+  }
+
+  function initTheme() {
+    var saved = localStorage.getItem('app_theme');
+    if (saved) document.documentElement.setAttribute('data-theme', saved);
+  }
+
+  function bindEvents() {
+    var loginForm = document.getElementById('login-form');
+    if (loginForm) {
+      loginForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var data = UIForm.serialize(loginForm);
+        Api.call('auth.login', { email: data.email, password: data.password, rememberMe: !!data.rememberMe })
+          .then(function (result) {
+            Api.setToken(result.sessionToken);
+            var session = {};
+            Object.assign(session, result.user, result.role, { permissions: result.permissions });
+            showDashboard(session);
+          });
+      });
+    }
+
+    var forgotLink = document.getElementById('link-forgot-password');
+    if (forgotLink) {
+      forgotLink.addEventListener('click', function (e) {
+        e.preventDefault();
+        var formHtml = '<form id="forgot-form">' +
+          UIForm.field('Email', UIForm.textInput('email', '')) +
+          '<button type="submit" class="btn btn-primary">Gửi mã OTP</button></form>';
+        UIModal.open('Quên mật khẩu', formHtml);
+        document.getElementById('forgot-form').addEventListener('submit', function (ev) {
+          ev.preventDefault();
+          var data = UIForm.serialize(ev.target);
+          Api.call('auth.forgotPassword', { email: data.email }).then(function () {
+            openResetForm(data.email);
+          });
+        });
+      });
+    }
+
+    Utils.qsa('.nav-item').forEach(function (el) {
+      el.addEventListener('click', function (e) {
+        e.preventDefault();
+        navigateTo(el.getAttribute('data-module'));
+      });
+    });
+
+    var logoutBtn = document.getElementById('btn-logout');
+    if (logoutBtn) logoutBtn.addEventListener('click', logout);
+
+    var themeBtn = document.getElementById('btn-theme-toggle');
+    if (themeBtn) themeBtn.addEventListener('click', toggleTheme);
+
+    var sidebarToggle = document.getElementById('btn-sidebar-toggle');
+    if (sidebarToggle) {
+      sidebarToggle.addEventListener('click', function () {
+        document.querySelector('.app-sidebar').classList.toggle('open');
+      });
+    }
+  }
+
+  function openResetForm(email) {
+    var formHtml = '<form id="reset-form">' +
+      UIForm.field('Mã OTP', UIForm.textInput('otp', '')) +
+      UIForm.field('Mật khẩu mới', '<input class="form-input" type="password" name="newPassword" />') +
+      '<button type="submit" class="btn btn-primary">Đặt lại mật khẩu</button></form>';
+    UIModal.open('Nhập mã OTP', formHtml);
+    document.getElementById('reset-form').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var data = UIForm.serialize(e.target);
+      Api.call('auth.verifyOtpAndReset', { email: email, otp: data.otp, newPassword: data.newPassword })
+        .then(function () {
+          UIModal.close();
+          UIToast.success('Đặt lại mật khẩu thành công, vui lòng đăng nhập lại.');
+        });
+    });
+  }
+
+  function init() {
+    initTheme();
+    bindEvents();
+    var token = Api.getToken();
+    if (!token) { showLogin(); return; }
+    Api.call('auth.getSession').then(function (session) {
+      if (session) showDashboard(session); else showLogin();
+    }).catch(function () { showLogin(); });
+  }
+
+  return {
+    init: init,
+    showLogin: showLogin,
+    showDashboard: showDashboard,
+    navigateTo: navigateTo,
+    getSession: function () { return currentSession; }
+  };
+})();
+
+document.addEventListener('DOMContentLoaded', App.init);
+</script>

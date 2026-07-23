@@ -1,0 +1,47 @@
+<script>
+var DashboardModule = (function () {
+
+  function loadSummary() {
+    var container = document.getElementById('dashboard-summary-cards');
+    UILoading.renderSkeleton(container, 4);
+    Api.call('dashboard.summary', {}).then(function (data) {
+      container.innerHTML =
+        UICard.metric('Tổng công việc', data.totalTask) +
+        UICard.metric('Hoàn thành', data.completed, '--success') +
+        UICard.metric('Đang thực hiện', data.inProgress, '--accent') +
+        UICard.metric('Quá hạn', data.overdue, '--danger');
+    });
+  }
+
+  function loadStatusChart() {
+    Api.call('dashboard.statusChart', {}).then(function (data) {
+      var values = data.series.map(function (s) { return s.value; });
+      UIChart.renderDonut('dashboard-status-chart', data.labels, values);
+    });
+  }
+
+  function loadDeadlines() {
+    var container = document.getElementById('dashboard-deadline-list');
+    UILoading.renderSpinner(container);
+    Api.call('dashboard.deadlineList', { limit: 5 }).then(function (data) {
+      if (!data.items.length) {
+        UITable.renderEmpty(container, 'Không có công việc sắp đến hạn.');
+        return;
+      }
+      container.innerHTML = data.items.map(function (t) {
+        var dotColor = (t.priority === 'Urgent' || t.priority === 'High') ? '--danger' : '--accent';
+        var subtitle = Utils.escapeHtml(t.assigneeName) + ' · ' + Utils.formatDate(t.dueDate);
+        return UICard.deadlineRow(Utils.escapeHtml(t.title), subtitle, dotColor);
+      }).join('');
+    });
+  }
+
+  function load() {
+    loadSummary();
+    loadStatusChart();
+    loadDeadlines();
+  }
+
+  return { load: load };
+})();
+</script>

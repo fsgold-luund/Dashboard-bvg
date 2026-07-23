@@ -1,0 +1,36 @@
+<style>
+.app-sidebar nav { display: flex; flex-direction: column; gap: 2px; padding: 0 12px; }
+.nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: var(--radius-sm); color: var(--text-secondary); text-decoration: none; font-size: 14px; }
+.nav-item:hover { background: var(--bg); }
+.nav-item.active { background: var(--accent-bg); color: var(--accent); }
+.nav-item .material-symbols-outlined { font-size: 20px; }
+</style>
+<div class="app-sidebar">
+  <div style="padding: 20px 16px; display: flex; align-items: center; gap: 10px;">
+    <div style="width: 28px; height: 28px; border-radius: 8px; background: var(--accent-bg); color: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px; flex-shrink: 0;">E</div>
+    <span class="nav-label" style="font-weight: 500;">Enterprise</span>
+  </div>
+  <nav>
+    <a href="#" class="nav-item active" data-module="dashboard" data-permission="DASHBOARD_VIEW">
+      <span class="material-symbols-outlined" aria-hidden="true">dashboard</span><span class="nav-label">Dashboard</span>
+    </a>
+    <a href="#" class="nav-item" data-module="task" data-permission="TASK_VIEW">
+      <span class="material-symbols-outlined" aria-hidden="true">checklist</span><span class="nav-label">Công việc</span>
+    </a>
+    <a href="#" class="nav-item" data-module="employee" data-permission="EMPLOYEE_VIEW">
+      <span class="material-symbols-outlined" aria-hidden="true">group</span><span class="nav-label">Nhân viên</span>
+    </a>
+    <a href="#" class="nav-item" data-module="team" data-permission="ORG_MANAGE">
+      <span class="material-symbols-outlined" aria-hidden="true">diversity_3</span><span class="nav-label">Team</span>
+    </a>
+    <a href="#" class="nav-item" data-module="company" data-permission="ORG_MANAGE">
+      <span class="material-symbols-outlined" aria-hidden="true">apartment</span><span class="nav-label">Công ty</span>
+    </a>
+    <a href="#" class="nav-item" data-module="report" data-permission="">
+      <span class="material-symbols-outlined" aria-hidden="true">bar_chart</span><span class="nav-label">Báo cáo</span>
+    </a>
+    <a href="#" class="nav-item" data-module="setting" data-permission="">
+      <span class="material-symbols-outlined" aria-hidden="true">settings</span><span class="nav-label">Cấu hình</span>
+    </a>
+  </nav>
+</div>

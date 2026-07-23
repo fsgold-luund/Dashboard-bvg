@@ -1,0 +1,64 @@
+<div class="card" style="margin-bottom: 16px;">
+  <h3 style="margin: 0 0 12px; font-size: 14px; font-weight: 500;">Thông tin công ty</h3>
+  <div id="company-info-container"></div>
+</div>
+<div class="card">
+  <h3 style="margin: 0 0 12px; font-size: 14px; font-weight: 500;">Phòng ban</h3>
+  <div id="department-list-container"></div>
+</div>
+
+<script>
+// Company/Team không nằm trong danh sách 7 file scripts gốc (chỉ CRUD đơn giản, không cần
+// module riêng) — logic được nhúng trực tiếp trong view như 1 module tự chứa, theo cùng
+// pattern gọi Api.call như các module khác.
+var CompanyModule = (function () {
+
+  function loadInfo() {
+    var container = document.getElementById('company-info-container');
+    UILoading.renderSpinner(container);
+    Api.call('company.getInfo', {}).then(function (company) {
+      container.innerHTML =
+        UIForm.field('Tên công ty', UIForm.textInput('companyName', company.companyName)) +
+        UIForm.field('Địa chỉ', UIForm.textInput('address', company.address)) +
+        UIForm.field('Điện thoại', UIForm.textInput('phone', company.phone)) +
+        '<button class="btn btn-primary" id="btn-save-company">Lưu thay đổi</button>';
+      document.getElementById('btn-save-company').addEventListener('click', function () {
+        var data = {
+          companyName: document.querySelector('#company-info-container [name=companyName]').value,
+          address: document.querySelector('#company-info-container [name=address]').value,
+          phone: document.querySelector('#company-info-container [name=phone]').value
+        };
+        Api.call('company.updateInfo', data).then(function () { UIToast.success('Đã lưu thông tin công ty.'); });
+      });
+    }).catch(function () {
+      UITable.renderError(container, 'Không tải được thông tin công ty.', loadInfo);
+    });
+  }
+
+  function loadDepartments() {
+    var container = document.getElementById('department-list-container');
+    UILoading.renderSkeleton(container, 3);
+    Api.call('company.listDepartments', {}).then(function (result) {
+      if (!result.items.length) {
+        UITable.renderEmpty(container, 'Chưa có phòng ban nào.');
+        return;
+      }
+      container.innerHTML = '<table class="data-table" style="width:100%;border-collapse:collapse;">' +
+        '<thead><tr><th>Mã</th><th>Tên phòng ban</th><th>Trạng thái</th></tr></thead><tbody>' +
+        result.items.map(function (d) {
+          return '<tr><td>' + Utils.escapeHtml(d.departmentCode || '') + '</td><td>' + Utils.escapeHtml(d.departmentName) +
+            '</td><td><span class="badge badge-accent">' + d.status + '</span></td></tr>';
+        }).join('') + '</tbody></table>';
+    }).catch(function () {
+      UITable.renderError(container, 'Không tải được danh sách phòng ban.', loadDepartments);
+    });
+  }
+
+  function load() {
+    loadInfo();
+    loadDepartments();
+  }
+
+  return { load: load };
+})();
+</script>

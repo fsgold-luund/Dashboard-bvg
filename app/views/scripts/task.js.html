@@ -1,0 +1,121 @@
+<script>
+var TaskModule = (function () {
+  var state = { page: 1, pageSize: 20, filters: {} };
+
+  function statusBadgeClass(status) {
+    var map = { Completed: 'badge-success', Overdue: 'badge-danger', InProgress: 'badge-accent', Pending: 'badge-warning' };
+    return map[status] || 'badge-accent';
+  }
+
+  function renderRows(items) {
+    return items.map(function (t) {
+      return '<tr onclick="TaskModule.openDetail(\'' + t.taskId + '\')" style="cursor:pointer;">' +
+        '<td>' + Utils.escapeHtml(t.taskCode) + '</td>' +
+        '<td>' + Utils.escapeHtml(t.title) + '</td>' +
+        '<td>' + Utils.escapeHtml(t.assigneeName) + '</td>' +
+        '<td>' + Utils.formatDate(t.dueDate) + '</td>' +
+        '<td><span class="badge ' + statusBadgeClass(t.status) + '">' + t.status + '</span></td>' +
+        '</tr>';
+    }).join('');
+  }
+
+  function load() {
+    var container = document.getElementById('task-list-container');
+    UILoading.renderSkeleton(container, 5);
+    Api.call('task.list', { filters: state.filters, page: state.page, pageSize: state.pageSize })
+      .then(function (result) {
+        if (!result.items.length) {
+          UITable.renderEmpty(container, 'Chưa có công việc nào.',
+            '<button class="btn btn-primary" onclick="TaskModule.openCreateModal()">Tạo công việc</button>');
+          return;
+        }
+        container.innerHTML =
+          '<div style="display:flex;justify-content:flex-end;margin-bottom:12px;">' +
+          '<button class="btn btn-primary" onclick="TaskModule.openCreateModal()">+ Giao việc</button></div>' +
+          '<table class="data-table" style="width:100%;border-collapse:collapse;">' +
+          '<thead><tr><th>Mã việc</th><th>Tiêu đề</th><th>Người nhận</th><th>Hạn</th><th>Trạng thái</th></tr></thead>' +
+          '<tbody>' + renderRows(result.items) + '</tbody></table>' +
+          '<div id="task-pagination"></div>';
+        UITable.renderPagination('task-pagination', result.page, result.pageSize, result.total, function (page) {
+          state.page = page;
+          load();
+        });
+      })
+      .catch(function () {
+        UITable.renderError(container, 'Không tải được danh sách công việc.', load);
+      });
+  }
+
+  function openCreateModal() {
+    var formHtml = '<form id="task-form">' +
+      UIForm.field('Tiêu đề', UIForm.textInput('title', '', 'Nhập tiêu đề công việc')) +
+      UIForm.field('Mô tả', UIForm.textarea('description', '')) +
+      UIForm.field('Mã nhân viên nhận việc', UIForm.textInput('assigneeId', '', 'EMP-xxxxxxxx')) +
+      UIForm.field('Mức ưu tiên', UIForm.select('priority', [
+        { value: 'Low', label: 'Thấp' }, { value: 'Medium', label: 'Trung bình' },
+        { value: 'High', label: 'Cao' }, { value: 'Urgent', label: 'Khẩn cấp' }
+      ], 'Medium')) +
+      UIForm.field('Hạn hoàn thành', UIForm.dateInput('dueDate', '')) +
+      '<button type="submit" class="btn btn-primary">Giao việc</button></form>';
+    UIModal.open('Tạo công việc mới', formHtml);
+    document.getElementById('task-form').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var data = UIForm.serialize(e.target);
+      Api.call('task.create', data).then(function () {
+        UIModal.close();
+        UIToast.success('Đã tạo công việc.');
+        load();
+      });
+    });
+  }
+
+  function openDetail(taskId) {
+    Api.call('task.getById', { taskId: taskId }).then(function (task) {
+      var body = '<p style="font-weight:500;">' + Utils.escapeHtml(task.title) + '</p>' +
+        '<p class="text-muted">' + Utils.escapeHtml(task.description || '') + '</p>' +
+        '<p>Người nhận: ' + Utils.escapeHtml(task.assigneeName) + '</p>' +
+        '<p>Hạn: ' + Utils.formatDate(task.dueDate) + '</p>' +
+        '<p>Trạng thái: <span class="badge ' + statusBadgeClass(task.status) + '">' + task.status + '</span></p>' +
+        '<div style="display:flex;gap:8px;margin-top:12px;">' +
+        '<button class="btn" onclick="TaskModule.markComplete(\'' + task.taskId + '\')">Đánh dấu hoàn thành</button>' +
+        '<button class="btn" onclick="TaskModule.openExtensionForm(\'' + task.taskId + '\')">Xin gia hạn</button>' +
+        '</div>';
+      UIModal.open('Chi tiết công việc', body);
+    });
+  }
+
+  function markComplete(taskId) {
+    Api.call('task.updateStatus', { taskId: taskId, status: 'Completed', progress: 100 }).then(function () {
+      UIModal.close();
+      UIToast.success('Đã cập nhật trạng thái.');
+      load();
+    });
+  }
+
+  function openExtensionForm(taskId) {
+    var formHtml = '<form id="extension-form">' +
+      UIForm.field('Lý do', UIForm.textarea('reason', '')) +
+      UIForm.field('Hạn mới', UIForm.dateInput('newDueDate', '')) +
+      '<button type="submit" class="btn btn-primary">Gửi yêu cầu</button></form>';
+    UIModal.open('Xin gia hạn', formHtml);
+    document.getElementById('extension-form').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var data = UIForm.serialize(e.target);
+      Api.call('task.requestExtension', { taskId: taskId, reason: data.reason, newDueDate: data.newDueDate })
+        .then(function () {
+          UIModal.close();
+          UIToast.success('Đã gửi yêu cầu gia hạn.');
+          load();
+        });
+    });
+  }
+
+  return {
+    load: load,
+    openCreateModal: openCreateModal,
+    openDetail: openDetail,
+    markComplete: markComplete,
+    openExtensionForm: openExtensionForm
+  };
+})();
+</script>

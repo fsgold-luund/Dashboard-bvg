@@ -1,0 +1,15 @@
+<script>
+// Stub — ReportController/ReportModel chưa triển khai ở MVP (xem Giai đoạn 1: phạm vi mở rộng).
+// Không gọi Api.call ở đây để tránh hiện toast lỗi NOT_IMPLEMENTED cho một màn hình đã biết trước là chưa có.
+var ReportModule = (function () {
+
+  function load() {
+    var container = document.getElementById('report-container');
+    if (!container) return;
+    container.innerHTML = '<div class="card" style="text-align:center;padding:40px;color:var(--text-secondary);">' +
+      'Chức năng báo cáo sẽ có ở giai đoạn mở rộng tiếp theo.</div>';
+  }
+
+  return { load: load };
+})();
+</script>

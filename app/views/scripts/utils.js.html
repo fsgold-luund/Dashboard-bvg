@@ -1,0 +1,34 @@
+<script>
+var Utils = {
+  debounce: function (fn, wait) {
+    var timer;
+    return function () {
+      var args = arguments, ctx = this;
+      clearTimeout(timer);
+      timer = setTimeout(function () { fn.apply(ctx, args); }, wait || 300);
+    };
+  },
+
+  formatDate: function (isoString) {
+    if (!isoString) return '';
+    var d = new Date(isoString);
+    return isNaN(d.getTime()) ? '' : d.toLocaleDateString('vi-VN');
+  },
+
+  formatDateTime: function (isoString) {
+    if (!isoString) return '';
+    var d = new Date(isoString);
+    return isNaN(d.getTime()) ? '' : d.toLocaleString('vi-VN');
+  },
+
+  escapeHtml: function (str) {
+    if (str === null || str === undefined) return '';
+    return String(str).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  },
+
+  qs: function (selector, root) { return (root || document).querySelector(selector); },
+  qsa: function (selector, root) { return Array.prototype.slice.call((root || document).querySelectorAll(selector)); }
+};
+</script>

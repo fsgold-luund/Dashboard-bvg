@@ -1,0 +1,58 @@
+<style>
+:root {
+  --bg: #F7F6F2;
+  --surface: #FFFFFF;
+  --text-primary: #1F2430;
+  --text-secondary: #6B7280;
+  --border: #E7E5E0;
+  --accent: #0C447C;
+  --accent-bg: #E6F1FB;
+  --success: #27500A;
+  --success-bg: #EAF3DE;
+  --warning: #633806;
+  --warning-bg: #FAEEDA;
+  --danger: #791F1F;
+  --danger-bg: #FCEBEB;
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --shadow-card: 0 1px 2px rgba(0,0,0,.04), 0 1px 8px rgba(0,0,0,.03);
+  --font-sans: 'Be Vietnam Pro', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+[data-theme="dark"] {
+  --bg: #15171C;
+  --surface: #1D2027;
+  --text-primary: #EDEFF2;
+  --text-secondary: #9BA1AC;
+  --border: #2B2F38;
+  --accent: #B5D4F4;
+  --accent-bg: #0C447C;
+  --success: #C0DD97;
+  --success-bg: #27500A;
+  --warning: #FAC775;
+  --warning-bg: #633806;
+  --danger: #F7C1C1;
+  --danger-bg: #791F1F;
+  --shadow-card: 0 1px 2px rgba(0,0,0,.4), 0 1px 8px rgba(0,0,0,.3);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not([data-theme="dark"]) {
+    --bg: #15171C;
+    --surface: #1D2027;
+    --text-primary: #EDEFF2;
+    --text-secondary: #9BA1AC;
+    --border: #2B2F38;
+    --accent: #B5D4F4;
+    --accent-bg: #0C447C;
+    --success: #C0DD97;
+    --success-bg: #27500A;
+    --warning: #FAC775;
+    --warning-bg: #633806;
+    --danger: #F7C1C1;
+    --danger-bg: #791F1F;
+    --shadow-card: 0 1px 2px rgba(0,0,0,.4), 0 1px 8px rgba(0,0,0,.3);
+  }
+}
+</style>

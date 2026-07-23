@@ -1,0 +1,63 @@
+<!--
+  index.html — điểm vào duy nhất mà Main.gs (doGet) trả về. Toàn bộ trang là 1 SPA: login và
+  app shell (sidebar/header/content/footer) đều được include sẵn ở đây (ẩn bằng class "hidden"),
+  main.js.html quyết định hiển thị cái nào dựa trên auth.getSession. Xem ghi chú trong app/Main.gs.
+-->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
+
+<?!= include('app/views/style/theme') ?>
+<?!= include('app/views/style/main') ?>
+<?!= include('app/views/style/responsive') ?>
+
+<div id="view-login" class="hidden">
+  <?!= include('app/views/login') ?>
+</div>
+
+<div id="view-app" class="hidden app-shell">
+  <?!= include('app/views/sidebar') ?>
+  <div class="app-main">
+    <?!= include('app/views/header') ?>
+    <div class="app-content">
+      <?!= include('app/views/components/navbar') ?>
+
+      <div id="module-dashboard" class="app-module">
+        <?!= include('app/views/dashboard') ?>
+      </div>
+      <div id="module-task" class="app-module hidden">
+        <?!= include('app/views/task') ?>
+      </div>
+      <div id="module-employee" class="app-module hidden">
+        <?!= include('app/views/employee') ?>
+      </div>
+      <div id="module-company" class="app-module hidden">
+        <?!= include('app/views/company') ?>
+      </div>
+      <div id="module-team" class="app-module hidden">
+        <?!= include('app/views/team') ?>
+      </div>
+      <div id="module-report" class="app-module hidden">
+        <?!= include('app/views/report') ?>
+      </div>
+      <div id="module-setting" class="app-module hidden">
+        <?!= include('app/views/setting') ?>
+      </div>
+    </div>
+    <?!= include('app/views/footer') ?>
+  </div>
+</div>
+
+<?!= include('app/views/components/modal') ?>
+<?!= include('app/views/components/toast') ?>
+<?!= include('app/views/components/loading') ?>
+<?!= include('app/views/components/card') ?>
+<?!= include('app/views/components/table') ?>
+<?!= include('app/views/components/form') ?>
+<?!= include('app/views/components/chart') ?>
+
+<?!= include('app/views/scripts/utils') ?>
+<?!= include('app/views/scripts/api') ?>
+<?!= include('app/views/scripts/dashboard') ?>
+<?!= include('app/views/scripts/task') ?>
+<?!= include('app/views/scripts/employee') ?>
+<?!= include('app/views/scripts/report') ?>
+<?!= include('app/views/scripts/main') ?>

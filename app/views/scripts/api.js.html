@@ -1,0 +1,38 @@
+<script>
+// Bọc google.script.run thành Promise, gắn sessionToken, xử lý lỗi tập trung (toast + auto logout
+// khi phiên hết hạn). Mọi script module khác BẮT BUỘC gọi qua Api.call — không tự gọi google.script.run.
+var Api = (function () {
+  var STORAGE_KEY = 'app_session_token';
+
+  function getToken() { return localStorage.getItem(STORAGE_KEY); }
+  function setToken(token) { if (token) localStorage.setItem(STORAGE_KEY, token); }
+  function clearToken() { localStorage.removeItem(STORAGE_KEY); }
+
+  function call(action, params) {
+    return new Promise(function (resolve, reject) {
+      google.script.run
+        .withSuccessHandler(function (response) {
+          if (response && response.success) {
+            resolve(response.data);
+            return;
+          }
+          var error = (response && response.error) || { code: 'SERVER_ERROR', message: 'Đã xảy ra lỗi hệ thống.' };
+          if (error.code === 'AUTH_SESSION_EXPIRED') {
+            clearToken();
+            if (window.App && typeof window.App.showLogin === 'function') window.App.showLogin();
+          }
+          if (window.UIToast) UIToast.error(error.message);
+          reject(error);
+        })
+        .withFailureHandler(function (err) {
+          var message = (err && err.message) || 'Không thể kết nối tới máy chủ.';
+          if (window.UIToast) UIToast.error(message);
+          reject({ code: 'SERVER_ERROR', message: message });
+        })
+        .apiCall(action, params || {}, getToken());
+    });
+  }
+
+  return { call: call, getToken: getToken, setToken: setToken, clearToken: clearToken };
+})();
+</script>

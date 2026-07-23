@@ -1,0 +1,28 @@
+<div id="ui-modal-overlay" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:50;display:flex;align-items:center;justify-content:center;">
+  <div id="ui-modal-box" class="card" style="width:480px;max-width:92vw;max-height:86vh;overflow-y:auto;animation:modal-in .15s ease;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <h3 id="ui-modal-title" style="margin:0;font-size:16px;font-weight:500;"></h3>
+      <button class="btn" onclick="UIModal.close()" aria-label="Đóng" style="padding:4px 10px;">&times;</button>
+    </div>
+    <div id="ui-modal-body"></div>
+  </div>
+</div>
+<script>
+var UIModal = {
+  open: function (title, contentHtml) {
+    document.getElementById('ui-modal-title').textContent = title || '';
+    document.getElementById('ui-modal-body').innerHTML = contentHtml || '';
+    document.getElementById('ui-modal-overlay').classList.remove('hidden');
+  },
+  close: function () {
+    document.getElementById('ui-modal-overlay').classList.add('hidden');
+    document.getElementById('ui-modal-body').innerHTML = '';
+  }
+};
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape') UIModal.close();
+});
+document.getElementById('ui-modal-overlay').addEventListener('click', function (e) {
+  if (e.target.id === 'ui-modal-overlay') UIModal.close();
+});
+</script>

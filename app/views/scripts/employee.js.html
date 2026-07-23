@@ -1,0 +1,61 @@
+<script>
+var EmployeeModule = (function () {
+  var state = { page: 1, pageSize: 20, filters: {} };
+
+  function renderRows(items) {
+    return items.map(function (e) {
+      return '<tr><td>' + Utils.escapeHtml(e.employeeCode) + '</td><td>' + Utils.escapeHtml(e.fullName) + '</td>' +
+        '<td>' + Utils.escapeHtml(e.position || '') + '</td>' +
+        '<td><span class="badge badge-accent">' + e.status + '</span></td></tr>';
+    }).join('');
+  }
+
+  function load() {
+    var container = document.getElementById('employee-list-container');
+    UILoading.renderSkeleton(container, 5);
+    Api.call('employee.list', { filters: state.filters, page: state.page, pageSize: state.pageSize })
+      .then(function (result) {
+        if (!result.items.length) {
+          UITable.renderEmpty(container, 'Chưa có nhân viên nào.',
+            '<button class="btn btn-primary" onclick="EmployeeModule.openCreateModal()">Thêm nhân viên</button>');
+          return;
+        }
+        container.innerHTML =
+          '<div style="display:flex;justify-content:flex-end;margin-bottom:12px;">' +
+          '<button class="btn btn-primary" onclick="EmployeeModule.openCreateModal()">+ Thêm nhân viên</button></div>' +
+          '<table class="data-table" style="width:100%;border-collapse:collapse;">' +
+          '<thead><tr><th>Mã NV</th><th>Họ tên</th><th>Chức danh</th><th>Trạng thái</th></tr></thead>' +
+          '<tbody>' + renderRows(result.items) + '</tbody></table><div id="employee-pagination"></div>';
+        UITable.renderPagination('employee-pagination', result.page, result.pageSize, result.total, function (page) {
+          state.page = page;
+          load();
+        });
+      })
+      .catch(function () {
+        UITable.renderError(container, 'Không tải được danh sách nhân viên.', load);
+      });
+  }
+
+  function openCreateModal() {
+    var formHtml = '<form id="employee-form">' +
+      UIForm.field('Họ tên', UIForm.textInput('fullName', '')) +
+      UIForm.field('Email đăng nhập', UIForm.textInput('email', '')) +
+      UIForm.field('Mã vai trò (bắt buộc nếu có email)', UIForm.textInput('roleId', '', 'ROL-xxxxxxxx')) +
+      UIForm.field('Mã phòng ban', UIForm.textInput('departmentId', '', 'DEP-xxxxxxxx')) +
+      UIForm.field('Chức danh', UIForm.textInput('position', '')) +
+      '<button type="submit" class="btn btn-primary">Tạo nhân viên</button></form>';
+    UIModal.open('Thêm nhân viên', formHtml);
+    document.getElementById('employee-form').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var data = UIForm.serialize(e.target);
+      Api.call('employee.create', data).then(function () {
+        UIModal.close();
+        UIToast.success('Đã thêm nhân viên.');
+        load();
+      });
+    });
+  }
+
+  return { load: load, openCreateModal: openCreateModal };
+})();
+</script>

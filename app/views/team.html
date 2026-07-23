@@ -1,0 +1,52 @@
+<div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+    <h3 style="margin: 0; font-size: 14px; font-weight: 500;">Danh sách Team</h3>
+    <button class="btn btn-primary" onclick="TeamModule.openCreateModal()">+ Tạo team</button>
+  </div>
+  <div id="team-list-container"></div>
+</div>
+
+<script>
+// Xem ghi chú trong company.html — Team cũng không có file script riêng trong danh sách gốc.
+var TeamModule = (function () {
+
+  function load() {
+    var container = document.getElementById('team-list-container');
+    UILoading.renderSkeleton(container, 3);
+    Api.call('team.list', {}).then(function (result) {
+      if (!result.items.length) {
+        UITable.renderEmpty(container, 'Chưa có team nào.');
+        return;
+      }
+      container.innerHTML = '<table class="data-table" style="width:100%;border-collapse:collapse;">' +
+        '<thead><tr><th>Tên team</th><th>Mã trưởng nhóm</th><th>Trạng thái</th></tr></thead><tbody>' +
+        result.items.map(function (t) {
+          return '<tr><td>' + Utils.escapeHtml(t.teamName) + '</td><td>' + Utils.escapeHtml(t.leaderId || '') +
+            '</td><td><span class="badge badge-accent">' + t.status + '</span></td></tr>';
+        }).join('') + '</tbody></table>';
+    }).catch(function () {
+      UITable.renderError(container, 'Không tải được danh sách team.', load);
+    });
+  }
+
+  function openCreateModal() {
+    var formHtml = '<form id="team-form">' +
+      UIForm.field('Tên team', UIForm.textInput('teamName', '')) +
+      UIForm.field('Mã phòng ban', UIForm.textInput('departmentId', '', 'DEP-xxxxxxxx')) +
+      UIForm.field('Mã trưởng nhóm', UIForm.textInput('leaderId', '', 'EMP-xxxxxxxx')) +
+      '<button type="submit" class="btn btn-primary">Tạo team</button></form>';
+    UIModal.open('Tạo team mới', formHtml);
+    document.getElementById('team-form').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var data = UIForm.serialize(e.target);
+      Api.call('team.create', data).then(function () {
+        UIModal.close();
+        UIToast.success('Đã tạo team.');
+        load();
+      });
+    });
+  }
+
+  return { load: load, openCreateModal: openCreateModal };
+})();
+</script>

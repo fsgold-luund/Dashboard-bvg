@@ -1,0 +1,15 @@
+<div id="ui-navbar" class="card" style="display:flex;gap:10px;align-items:center;padding:10px 16px;margin-bottom:16px;font-size:13px;"></div>
+<script>
+var UINavbar = {
+  setBreadcrumb: function (items) {
+    var el = document.getElementById('ui-navbar');
+    if (!el) return;
+    el.innerHTML = items.map(function (item, i) {
+      var isLast = i === items.length - 1;
+      return isLast
+        ? '<span style="color:var(--text-primary);font-weight:500;">' + item + '</span>'
+        : '<span class="text-muted">' + item + ' /</span>';
+    }).join(' ');
+  }
+};
+</script>

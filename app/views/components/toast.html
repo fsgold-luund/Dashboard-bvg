@@ -1,0 +1,23 @@
+<div id="ui-toast-container" style="position:fixed;top:16px;right:16px;z-index:60;display:flex;flex-direction:column;gap:8px;"></div>
+<script>
+var UIToast = {
+  show: function (message, type) {
+    type = type || 'info';
+    var colors = {
+      success: { bg: 'var(--success-bg)', fg: 'var(--success)' },
+      warning: { bg: 'var(--warning-bg)', fg: 'var(--warning)' },
+      danger: { bg: 'var(--danger-bg)', fg: 'var(--danger)' },
+      info: { bg: 'var(--accent-bg)', fg: 'var(--accent)' }
+    };
+    var c = colors[type] || colors.info;
+    var el = document.createElement('div');
+    el.style.cssText = 'padding:10px 16px;border-radius:var(--radius-sm);background:' + c.bg +
+      ';color:' + c.fg + ';font-size:13px;box-shadow:var(--shadow-card);animation:toast-in .15s ease;max-width:320px;';
+    el.textContent = message;
+    document.getElementById('ui-toast-container').appendChild(el);
+    setTimeout(function () { el.remove(); }, 3000);
+  },
+  success: function (message) { this.show(message, 'success'); },
+  error: function (message) { this.show(message, 'danger'); }
+};
+</script>

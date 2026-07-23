@@ -1,0 +1,27 @@
+<style>
+@keyframes ui-spin { to { transform: rotate(360deg); } }
+</style>
+<script>
+var UILoading = {
+  renderSkeleton: function (container, rows) {
+    if (typeof container === 'string') container = document.getElementById(container);
+    if (!container) return;
+    var html = '';
+    for (var i = 0; i < (rows || 4); i++) {
+      html += '<div class="skeleton" style="height:16px;width:' + (100 - (i % 3) * 10) + '%;margin-bottom:10px;"></div>';
+    }
+    container.innerHTML = html;
+  },
+  renderSpinner: function (container) {
+    if (typeof container === 'string') container = document.getElementById(container);
+    if (!container) return;
+    container.innerHTML = '<div style="display:flex;justify-content:center;padding:24px;">' +
+      '<div style="width:24px;height:24px;border:3px solid var(--border);border-top-color:var(--accent);' +
+      'border-radius:50%;animation:ui-spin .7s linear infinite;"></div></div>';
+  },
+  clear: function (container) {
+    if (typeof container === 'string') container = document.getElementById(container);
+    if (container) container.innerHTML = '';
+  }
+};
+</script>

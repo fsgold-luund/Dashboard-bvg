@@ -1,0 +1,39 @@
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script>
+var UIChart = {
+  charts: {},
+  palette: ['#0C447C', '#27500A', '#633806', '#791F1F', '#6B7280', '#534AB7'],
+
+  renderDonut: function (canvasId, labels, data) {
+    var ctx = document.getElementById(canvasId);
+    if (!ctx) return;
+    if (UIChart.charts[canvasId]) UIChart.charts[canvasId].destroy();
+    UIChart.charts[canvasId] = new Chart(ctx, {
+      type: 'doughnut',
+      data: { labels: labels, datasets: [{ data: data, backgroundColor: UIChart.palette }] },
+      options: { plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 12 } } } } }
+    });
+  },
+
+  renderBar: function (canvasId, labels, data) {
+    var ctx = document.getElementById(canvasId);
+    if (!ctx) return;
+    if (UIChart.charts[canvasId]) UIChart.charts[canvasId].destroy();
+    UIChart.charts[canvasId] = new Chart(ctx, {
+      type: 'bar',
+      data: { labels: labels, datasets: [{ data: data, backgroundColor: '#0C447C', borderRadius: 4 }] },
+      options: {
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+      }
+    });
+  },
+
+  destroy: function (canvasId) {
+    if (UIChart.charts[canvasId]) {
+      UIChart.charts[canvasId].destroy();
+      delete UIChart.charts[canvasId];
+    }
+  }
+};
+</script>

@@ -1,0 +1,32 @@
+<script>
+var UITable = {
+  renderEmpty: function (container, message, actionHtml) {
+    if (typeof container === 'string') container = document.getElementById(container);
+    if (!container) return;
+    container.innerHTML = '<div style="text-align:center;padding:40px 16px;color:var(--text-secondary);">' +
+      '<p style="margin:0 0 8px;">' + (message || 'Chưa có dữ liệu.') + '</p>' + (actionHtml || '') + '</div>';
+  },
+  renderError: function (container, message, onRetry) {
+    if (typeof container === 'string') container = document.getElementById(container);
+    if (!container) return;
+    container.innerHTML = '<div style="text-align:center;padding:40px 16px;color:var(--danger);">' +
+      '<p style="margin:0 0 12px;">' + (message || 'Đã xảy ra lỗi, vui lòng thử lại.') + '</p>' +
+      '<button class="btn" id="ui-table-retry-btn">Thử lại</button></div>';
+    var btn = document.getElementById('ui-table-retry-btn');
+    if (btn && onRetry) btn.addEventListener('click', onRetry);
+  },
+  renderPagination: function (container, page, pageSize, total, onPageChange) {
+    if (typeof container === 'string') container = document.getElementById(container);
+    if (!container) return;
+    var totalPages = Math.max(1, Math.ceil(total / pageSize));
+    container.innerHTML = '<div style="display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-top:12px;font-size:13px;">' +
+      '<span class="text-muted">Trang ' + page + '/' + totalPages + ' (' + total + ' bản ghi)</span>' +
+      '<button class="btn" id="ui-page-prev"' + (page <= 1 ? ' disabled' : '') + '>Trước</button>' +
+      '<button class="btn" id="ui-page-next"' + (page >= totalPages ? ' disabled' : '') + '>Sau</button></div>';
+    var prev = document.getElementById('ui-page-prev');
+    var next = document.getElementById('ui-page-next');
+    if (prev) prev.addEventListener('click', function () { if (page > 1) onPageChange(page - 1); });
+    if (next) next.addEventListener('click', function () { if (page < totalPages) onPageChange(page + 1); });
+  }
+};
+</script>

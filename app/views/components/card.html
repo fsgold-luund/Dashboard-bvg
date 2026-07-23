@@ -1,0 +1,15 @@
+<script>
+var UICard = {
+  metric: function (label, value, colorVar) {
+    return '<div class="card"><div class="text-muted" style="font-size:12px;">' + label +
+      '</div><div style="font-size:22px;font-weight:600;color:var(' + (colorVar || '--text-primary') +
+      ');margin-top:6px;">' + value + '</div></div>';
+  },
+  deadlineRow: function (title, subtitle, dotColorVar) {
+    return '<div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:12px;">' +
+      '<span style="width:8px;height:8px;border-radius:50%;margin-top:5px;flex-shrink:0;background:var(' + (dotColorVar || '--accent') + ');"></span>' +
+      '<div><p style="font-size:13px;margin:0;">' + title + '</p>' +
+      '<p style="font-size:12px;color:var(--text-secondary);margin:2px 0 0;">' + subtitle + '</p></div></div>';
+  }
+};
+</script>
