@@ -25,6 +25,12 @@ var Constant = Object.freeze({
     SETTING: 'Setting'
   }),
 
+  GENDER: Object.freeze({
+    MALE: 'Male',
+    FEMALE: 'Female',
+    OTHER: 'Other'
+  }),
+
   ROLE_NAME: Object.freeze({
     SUPER_ADMIN: 'Super Admin',
     ADMIN: 'Admin',
@@ -71,6 +77,11 @@ var Constant = Object.freeze({
     DASHBOARD_STATUS_CHART: 'dashboard.statusChart',
     DASHBOARD_WORKLOAD_CHART: 'dashboard.workloadChart',
     DASHBOARD_DEADLINE_LIST: 'dashboard.deadlineList',
+    DASHBOARD_DEPARTMENT_LIST: 'dashboard.departmentList',
+    DASHBOARD_WORKLOAD_TREEMAP: 'dashboard.workloadTreemap',
+    DASHBOARD_EMPLOYEE_STATUS: 'dashboard.employeeStatusDistribution',
+    DASHBOARD_GENDER_DISTRIBUTION: 'dashboard.genderDistribution',
+    DASHBOARD_DEPARTMENT_TABLE: 'dashboard.departmentTable',
 
     TASK_LIST: 'task.list',
     TASK_GET_BY_ID: 'task.getById',

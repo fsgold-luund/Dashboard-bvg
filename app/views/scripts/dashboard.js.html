@@ -1,10 +1,16 @@
 <script>
 var DashboardModule = (function () {
 
+  var state = { departmentId: null };
+
+  function currentFilters() {
+    return state.departmentId ? { departmentId: state.departmentId } : {};
+  }
+
   function loadSummary() {
     var container = document.getElementById('dashboard-summary-cards');
     UILoading.renderSkeleton(container, 4);
-    Api.call('dashboard.summary', {}).then(function (data) {
+    Api.call('dashboard.summary', { filters: currentFilters() }).then(function (data) {
       container.innerHTML =
         UICard.metric('Tổng công việc', data.totalTask) +
         UICard.metric('Hoàn thành', data.completed, '--success') +
@@ -13,17 +19,53 @@ var DashboardModule = (function () {
     });
   }
 
-  function loadStatusChart() {
-    Api.call('dashboard.statusChart', {}).then(function (data) {
+  function toggleChartEmpty_(canvasId, emptyId, isEmpty, message) {
+    var canvas = document.getElementById(canvasId);
+    var empty = document.getElementById(emptyId);
+    canvas.classList.toggle('hidden', isEmpty);
+    empty.classList.toggle('hidden', !isEmpty);
+    if (isEmpty) {
+      UIChart.destroy(canvasId);
+      UITable.renderEmpty(empty, message);
+    }
+  }
+
+  function loadTreemap() {
+    Api.call('dashboard.workloadTreemap', { filters: currentFilters() }).then(function (data) {
+      if (!data.tree.length) {
+        toggleChartEmpty_('dashboard-treemap-chart', 'dashboard-treemap-empty', true, 'Chưa có công việc nào được ghi nhận.');
+        return;
+      }
+      toggleChartEmpty_('dashboard-treemap-chart', 'dashboard-treemap-empty', false);
+      UIChart.renderTreemap('dashboard-treemap-chart', data.tree);
+    });
+  }
+
+  function loadEmployeeStatus() {
+    Api.call('dashboard.employeeStatusDistribution', { filters: currentFilters() }).then(function (data) {
       var values = data.series.map(function (s) { return s.value; });
-      UIChart.renderDonut('dashboard-status-chart', data.labels, values);
+      UIChart.renderDonut('dashboard-employee-status-chart', data.labels, values);
+    });
+  }
+
+  function loadGenderChart() {
+    Api.call('dashboard.genderDistribution', { filters: currentFilters() }).then(function (data) {
+      if (!data.items.length) {
+        toggleChartEmpty_('dashboard-gender-chart', 'dashboard-gender-empty', true, 'Chưa có dữ liệu nhân sự.');
+        return;
+      }
+      toggleChartEmpty_('dashboard-gender-chart', 'dashboard-gender-empty', false);
+      var labels = data.items.map(function (i) { return i.departmentName; });
+      var male = data.items.map(function (i) { return i.malePct; });
+      var female = data.items.map(function (i) { return i.femalePct; });
+      UIChart.renderStackedBar('dashboard-gender-chart', labels, male, female);
     });
   }
 
   function loadDeadlines() {
     var container = document.getElementById('dashboard-deadline-list');
     UILoading.renderSpinner(container);
-    Api.call('dashboard.deadlineList', { limit: 5 }).then(function (data) {
+    Api.call('dashboard.deadlineList', { filters: currentFilters(), limit: 5 }).then(function (data) {
       if (!data.items.length) {
         UITable.renderEmpty(container, 'Không có công việc sắp đến hạn.');
         return;
@@ -36,12 +78,124 @@ var DashboardModule = (function () {
     });
   }
 
-  function load() {
-    loadSummary();
-    loadStatusChart();
-    loadDeadlines();
+  function groupRows_(rows) {
+    var order = [];
+    var map = {};
+    rows.forEach(function (r) {
+      if (!map[r.departmentId]) {
+        map[r.departmentId] = { departmentId: r.departmentId, departmentName: r.departmentName, rows: [], totalEmployees: 0, totalTasks: 0 };
+        order.push(r.departmentId);
+      }
+      map[r.departmentId].rows.push(r);
+      map[r.departmentId].totalEmployees += r.totalEmployees;
+      map[r.departmentId].totalTasks += r.totalTasks;
+    });
+    return order.map(function (id) { return map[id]; });
   }
 
-  return { load: load };
+  function completionBarHtml_(rate) {
+    return '<div class="completion-wrap"><div class="completion-bar"><div class="completion-fill" style="width:' + rate + '%;"></div></div>' +
+      '<span class="completion-text">' + rate + '%</span></div>';
+  }
+
+  function renderDepartmentTable(rows) {
+    var countEl = document.getElementById('dashboard-table-count');
+    countEl.textContent = rows.length + ' dòng';
+
+    var container = document.getElementById('dashboard-department-table');
+    if (!rows.length) {
+      UITable.renderEmpty(container, 'Chưa có dữ liệu để hiển thị.');
+      return;
+    }
+
+    var groups = groupRows_(rows);
+    var html = '<table class="dept-table"><thead><tr>' +
+      '<th>Phòng ban / Vị trí</th><th>Số nhân viên</th><th>Tổng công việc</th><th>Tỷ lệ hoàn thành</th>' +
+      '</tr></thead><tbody>';
+
+    groups.forEach(function (g, gi) {
+      var groupCompletion = g.totalTasks ? Math.round(
+        g.rows.reduce(function (sum, r) { return sum + r.completionRate * r.totalTasks; }, 0) / g.totalTasks
+      ) : 0;
+      html += '<tr class="dept-group-row" data-group="' + gi + '" onclick="DashboardModule.toggleGroup(' + gi + ')">' +
+        '<td><span class="toggle-icon">▾</span>' + Utils.escapeHtml(g.departmentName) + '</td>' +
+        '<td>' + g.totalEmployees + '</td><td>' + g.totalTasks + '</td><td>' + completionBarHtml_(groupCompletion) + '</td></tr>';
+      g.rows.forEach(function (r) {
+        html += '<tr class="dept-row" data-group="' + gi + '">' +
+          '<td style="padding-left:28px;color:var(--text-secondary);">' + Utils.escapeHtml(r.position) + '</td>' +
+          '<td>' + r.totalEmployees + '</td><td>' + r.totalTasks + '</td><td>' + completionBarHtml_(r.completionRate) + '</td></tr>';
+      });
+    });
+
+    html += '</tbody></table>';
+    container.innerHTML = html;
+  }
+
+  function loadDepartmentTable() {
+    var container = document.getElementById('dashboard-department-table');
+    UILoading.renderSpinner(container);
+    Api.call('dashboard.departmentTable', { filters: currentFilters() }).then(function (data) {
+      renderDepartmentTable(data.rows);
+    });
+  }
+
+  function renderDeptSidebar(items) {
+    var totalEmployees = items.reduce(function (s, d) { return s + d.employeeCount; }, 0);
+    var totalTasks = items.reduce(function (s, d) { return s + d.taskCount; }, 0);
+
+    var rows = [{ departmentId: '', departmentName: 'Tất cả phòng ban', taskCount: totalTasks, employeeCount: totalEmployees }].concat(items);
+
+    var container = document.getElementById('dashboard-dept-list');
+    container.innerHTML = rows.map(function (d) {
+      var active = (state.departmentId || '') === d.departmentId;
+      return '<button type="button" class="dept-item' + (active ? ' active' : '') + '" data-dept-id="' + Utils.escapeHtml(d.departmentId) + '">' +
+        '<span>' + Utils.escapeHtml(d.departmentName) + '</span>' +
+        '<span class="dept-count">' + d.taskCount + '</span></button>';
+    }).join('');
+
+    Array.prototype.forEach.call(container.querySelectorAll('.dept-item'), function (btn) {
+      btn.addEventListener('click', function () {
+        DashboardModule.selectDepartment(btn.getAttribute('data-dept-id') || null);
+      });
+    });
+  }
+
+  function loadDepartmentSidebar() {
+    Api.call('dashboard.departmentList', {}).then(function (data) {
+      renderDeptSidebar(data.items);
+    });
+  }
+
+  function loadPanels() {
+    loadSummary();
+    loadTreemap();
+    loadEmployeeStatus();
+    loadGenderChart();
+    loadDeadlines();
+    loadDepartmentTable();
+  }
+
+  function load() {
+    loadDepartmentSidebar();
+    loadPanels();
+  }
+
+  return {
+    load: load,
+    selectDepartment: function (departmentId) {
+      state.departmentId = departmentId || null;
+      Array.prototype.forEach.call(document.querySelectorAll('#dashboard-dept-list .dept-item'), function (btn) {
+        btn.classList.toggle('active', (btn.getAttribute('data-dept-id') || '') === (state.departmentId || ''));
+      });
+      loadPanels();
+    },
+    toggleGroup: function (groupIndex) {
+      Array.prototype.forEach.call(document.querySelectorAll('.dept-row[data-group="' + groupIndex + '"]'), function (row) {
+        row.classList.toggle('collapsed');
+      });
+      var header = document.querySelector('.dept-group-row[data-group="' + groupIndex + '"] .toggle-icon');
+      if (header) header.textContent = header.textContent === '▾' ? '▸' : '▾';
+    }
+  };
 })();
 </script>

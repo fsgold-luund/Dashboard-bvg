@@ -219,16 +219,40 @@ var TaskModel = (function () {
       });
     },
 
-    // Trả về {label, value} với label là ID thô (TeamID/AssigneeID) — Controller tự resolve tên hiển thị.
+    // Trả về {label, value} với label là ID thô (DepartmentID/TeamID/AssigneeID) — Controller tự resolve tên hiển thị.
     getWorkloadByGroup: function (filters, groupBy) {
       var tasks = DatabaseModel.find(SHEET, buildScopeFilter_(filters));
-      var keyFn = (groupBy === 'team')
-        ? function (t) { return t.TeamID; }
+      var keyFn = (groupBy === 'department') ? function (t) { return t.DepartmentID; }
+        : (groupBy === 'team') ? function (t) { return t.TeamID; }
         : function (t) { return t.AssigneeID; };
       var grouped = Helper.groupBy(tasks, keyFn);
       return Object.keys(grouped).filter(function (k) { return k; }).map(function (key) {
         return { label: key, value: grouped[key].length };
       });
+    },
+
+    // Nhóm 2 cấp DepartmentID -> TeamID kèm số lượng task — phục vụ biểu đồ treemap Dashboard.
+    // Trả về ID thô, Controller tự resolve tên phòng ban/team hiển thị.
+    getWorkloadByDepartmentAndTeam: function (filters) {
+      var tasks = DatabaseModel.find(SHEET, buildScopeFilter_(filters));
+      var grouped = Helper.groupBy(tasks, function (t) { return (t.DepartmentID || '') + '|' + (t.TeamID || ''); });
+      return Object.keys(grouped).map(function (key) {
+        var parts = key.split('|');
+        return { departmentId: parts[0], teamId: parts[1], value: grouped[key].length };
+      }).filter(function (item) { return item.departmentId; });
+    },
+
+    // Trả về {assigneeId: {total, completed}} — dùng để tính tỷ lệ hoàn thành theo nhân viên/vị trí ở Dashboard.
+    getCountsByAssignee: function (filters) {
+      var tasks = DatabaseModel.find(SHEET, buildScopeFilter_(filters));
+      var result = {};
+      tasks.forEach(function (t) {
+        if (!t.AssigneeID) return;
+        if (!result[t.AssigneeID]) result[t.AssigneeID] = { total: 0, completed: 0 };
+        result[t.AssigneeID].total++;
+        if (t.Status === TS.COMPLETED) result[t.AssigneeID].completed++;
+      });
+      return result;
     },
 
     getUpcomingDeadlines: function (filters, limit) {
