@@ -1,6 +1,6 @@
 {
   "timeZone": "Asia/Ho_Chi_Minh",
-  "dependencies": {clasp create --type webapp --title "Enterprise Dashboard Framework" --rootDir},
+  "dependencies": {},
   "webapp": {
     "executeAs": "USER_DEPLOYING",
     "access": "ANYONE_ANONYMOUS"
