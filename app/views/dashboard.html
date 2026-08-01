@@ -1,12 +1,85 @@
-<div id="dashboard-summary-cards" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 20px;"></div>
+<style>
+.dashboard-layout { display: grid; grid-template-columns: 220px 1fr; gap: 16px; align-items: start; }
+.dashboard-sidebar { position: sticky; top: 0; }
+.dashboard-sidebar h3 { margin: 0 0 10px; font-size: 13px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .4px; }
+.dept-item { display: flex; justify-content: space-between; align-items: center; gap: 8px; width: 100%; text-align: left; padding: 9px 10px; border: none; background: transparent; border-radius: var(--radius-sm); color: var(--text-primary); font-size: 13px; cursor: pointer; margin-bottom: 2px; }
+.dept-item:hover { background: var(--bg); }
+.dept-item.active { background: var(--accent-bg); color: var(--accent); font-weight: 600; }
+.dept-item .dept-count { font-size: 11px; color: var(--text-secondary); background: var(--bg); padding: 1px 7px; border-radius: 999px; }
+.dept-item.active .dept-count { background: rgba(255,255,255,.5); }
 
-<div class="dashboard-panels" style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 16px;">
-  <div class="card">
-    <h3 style="margin: 0 0 12px; font-size: 14px; font-weight: 500;">Trạng thái công việc</h3>
-    <div style="position: relative; height: 240px;"><canvas id="dashboard-status-chart"></canvas></div>
-  </div>
-  <div class="card">
-    <h3 style="margin: 0 0 12px; font-size: 14px; font-weight: 500;">Deadline sắp tới</h3>
-    <div id="dashboard-deadline-list"></div>
+.dashboard-main { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+.panels-2col { display: grid; grid-template-columns: 1.3fr 1fr; gap: 16px; }
+.chart-box-lg { position: relative; height: 300px; }
+.chart-box { position: relative; height: 260px; }
+.chart-empty { height: 100%; }
+.card h3.panel-title { margin: 0 0 12px; font-size: 14px; font-weight: 600; }
+
+.table-section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+.table-count { font-size: 12px; color: var(--text-secondary); background: var(--bg); padding: 3px 10px; border-radius: 999px; }
+.dept-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.dept-table thead th { text-align: left; padding: 8px 10px; border-bottom: 2px solid var(--border); color: var(--text-secondary); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .4px; }
+.dept-table tbody td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
+.dept-group-row { cursor: pointer; background: var(--bg); font-weight: 600; }
+.dept-group-row td { padding: 8px 10px; }
+.dept-group-row .toggle-icon { display: inline-block; width: 14px; }
+.dept-row.collapsed { display: none; }
+.completion-wrap { display: flex; align-items: center; gap: 8px; }
+.completion-bar { flex: 1; height: 6px; background: var(--border); border-radius: 4px; overflow: hidden; min-width: 60px; }
+.completion-fill { height: 100%; background: var(--accent); border-radius: 4px; }
+.completion-text { font-size: 11px; color: var(--text-secondary); min-width: 30px; text-align: right; }
+
+@media (max-width: 900px) {
+  .dashboard-layout { grid-template-columns: 1fr; }
+  .dashboard-sidebar { position: static; }
+  .panels-2col { grid-template-columns: 1fr; }
+}
+</style>
+
+<div class="dashboard-layout">
+  <aside class="dashboard-sidebar card">
+    <h3>Phòng ban</h3>
+    <div id="dashboard-dept-list"></div>
+  </aside>
+
+  <div class="dashboard-main">
+    <div id="dashboard-summary-cards" class="kpi-row"></div>
+
+    <div class="panels-2col">
+      <div class="card">
+        <h3 class="panel-title">Khối lượng công việc theo phòng ban</h3>
+        <div class="chart-box-lg">
+          <canvas id="dashboard-treemap-chart"></canvas>
+          <div id="dashboard-treemap-empty" class="chart-empty hidden"></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3 class="panel-title">Phân bổ trạng thái nhân sự</h3>
+        <div class="chart-box"><canvas id="dashboard-employee-status-chart"></canvas></div>
+      </div>
+    </div>
+
+    <div class="panels-2col">
+      <div class="card">
+        <h3 class="panel-title">Tỷ lệ giới tính theo phòng ban</h3>
+        <div class="chart-box">
+          <canvas id="dashboard-gender-chart"></canvas>
+          <div id="dashboard-gender-empty" class="chart-empty hidden"></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3 class="panel-title">Deadline sắp tới</h3>
+        <div id="dashboard-deadline-list"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="table-section-header">
+        <h3 class="panel-title" style="margin:0;">Chi tiết theo phòng ban &amp; vị trí</h3>
+        <span class="table-count" id="dashboard-table-count">0 dòng</span>
+      </div>
+      <div id="dashboard-department-table" style="overflow-x:auto;"></div>
+    </div>
   </div>
 </div>

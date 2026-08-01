@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Quản Lý Công Việc Nhân Viên</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous"></script>
+<style>
+:root{
+  --bg-primary:#f5f6f9;
+  --bg-card:#ffffff;
+  --bg-header:#1a1d3a;
+  --text-primary:#1f2330;
+  --text-secondary:#6b7086;
+  --text-on-dark:#ffffff;
+  --color-1:#4C6FFF;
+  --color-2:#22B8A0;
+  --color-3:#F4A93B;
+  --color-4:#E85D5D;
+  --color-5:#8B6FE8;
+  --color-6:#3BB4E5;
+  --positive:#1f9d63;
+  --negative:#e0473c;
+  --warning:#e0a11f;
+  --neutral:#6c757d;
+  --gap:16px;
+  --radius:10px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:var(--bg-primary);color:var(--text-primary);line-height:1.5;}
+.dashboard-container{max-width:1500px;margin:0 auto;padding:var(--gap);}
+.dashboard-header{background:var(--bg-header);color:var(--text-on-dark);padding:22px 26px;border-radius:var(--radius);margin-bottom:var(--gap);display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;}
+.dashboard-header h1{font-size:21px;font-weight:700;}
+.dashboard-header p{font-size:13px;color:rgba(255,255,255,.65);margin-top:4px;}
+.filters{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;}
+.filter-group{display:flex;flex-direction:column;gap:5px;}
+.filter-group label{font-size:11px;color:rgba(255,255,255,.65);text-transform:uppercase;letter-spacing:.5px;}
+.filter-group select{padding:7px 10px;border:1px solid rgba(255,255,255,.25);border-radius:6px;background:rgba(255,255,255,.1);color:var(--text-on-dark);font-size:13px;min-width:150px;}
+.filter-group select option{background:#22254a;color:var(--text-on-dark);}
+.reset-btn{padding:8px 14px;border-radius:6px;border:1px solid rgba(255,255,255,.3);background:transparent;color:#fff;font-size:13px;cursor:pointer;align-self:flex-end;}
+.reset-btn:hover{background:rgba(255,255,255,.12);}
+
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:var(--gap);margin-bottom:var(--gap);}
+.kpi-card{background:var(--bg-card);border-radius:var(--radius);padding:18px 22px;box-shadow:0 1px 3px rgba(0,0,0,.07);border-left:4px solid var(--color-1);}
+.kpi-card.c-total{border-left-color:var(--color-1);}
+.kpi-card.c-done{border-left-color:var(--positive);}
+.kpi-card.c-progress{border-left-color:var(--color-3);}
+.kpi-card.c-late{border-left-color:var(--negative);}
+.kpi-label{font-size:12px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
+.kpi-value{font-size:28px;font-weight:700;margin-bottom:4px;}
+.kpi-sub{font-size:12px;color:var(--text-secondary);}
+
+.chart-row{display:grid;grid-template-columns:1.1fr 1.4fr 1.4fr;gap:var(--gap);margin-bottom:var(--gap);}
+.chart-container{background:var(--bg-card);border-radius:var(--radius);padding:18px 20px;box-shadow:0 1px 3px rgba(0,0,0,.07);}
+.chart-container h3{font-size:14px;font-weight:600;margin-bottom:14px;}
+.chart-container canvas{max-height:270px;}
+
+.table-section{background:var(--bg-card);border-radius:var(--radius);padding:20px 22px;box-shadow:0 1px 3px rgba(0,0,0,.07);overflow-x:auto;}
+.table-section-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;}
+.table-section-header h3{font-size:15px;font-weight:600;}
+.table-count{font-size:12px;color:var(--text-secondary);background:#f0f1f6;padding:4px 10px;border-radius:12px;}
+
+.data-table{width:100%;border-collapse:collapse;font-size:13px;min-width:900px;}
+.data-table thead th{text-align:left;padding:10px 12px;border-bottom:2px solid #e5e7ef;color:var(--text-secondary);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;user-select:none;cursor:pointer;}
+.data-table thead th:hover{color:var(--text-primary);background:#f8f9fc;}
+.data-table tbody td{padding:10px 12px;border-bottom:1px solid #f0f1f6;vertical-align:middle;}
+.data-table tbody tr:hover{background:#f8f9fc;}
+.data-table tbody tr:last-child td{border-bottom:none;}
+
+.badge{display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;white-space:nowrap;}
+.badge-done{background:#e3f6ec;color:var(--positive);}
+.badge-progress{background:#fdf1de;color:#b5780f;}
+.badge-notstarted{background:#eceef4;color:var(--neutral);}
+.badge-late{background:#fce6e4;color:var(--negative);}
+.badge-high{background:#fce6e4;color:var(--negative);}
+.badge-medium{background:#fdf1de;color:#b5780f;}
+.badge-low{background:#e6f2fb;color:#1f78b4;}
+
+.progress-wrap{display:flex;align-items:center;gap:8px;}
+.progress-bar{flex:1;height:6px;background:#eceef4;border-radius:4px;overflow:hidden;min-width:70px;}
+.progress-fill{height:100%;background:var(--color-1);border-radius:4px;}
+.progress-text{font-size:11px;color:var(--text-secondary);min-width:32px;text-align:right;}
+
+.dashboard-footer{text-align:center;font-size:12px;color:var(--text-secondary);padding:16px 0 4px;}
+
+@media (max-width:900px){
+  .chart-row{grid-template-columns:1fr;}
+  .kpi-row{grid-template-columns:repeat(2,1fr);}
+}
+@media print{
+  body{background:#fff;}
+  .filters{display:none;}
+}
+</style>
+</head>
+<body>
+<div class="dashboard-container">
+
+  <header class="dashboard-header">
+    <div>
+      <h1>Dashboard Quản Lý Công Việc Nhân Viên</h1>
+      <p>Theo dõi tiến độ, khối lượng công việc và hiệu suất theo nhân viên &amp; phòng ban</p>
+    </div>
+    <div class="filters">
+      <div class="filter-group">
+        <label for="filter-dept">Phòng ban</label>
+        <select id="filter-dept" onchange="dashboard.applyFilters()">
+          <option value="all">Tất cả phòng ban</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label for="filter-status">Trạng thái</label>
+        <select id="filter-status" onchange="dashboard.applyFilters()">
+          <option value="all">Tất cả trạng thái</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label for="filter-emp">Nhân viên</label>
+        <select id="filter-emp" onchange="dashboard.applyFilters()">
+          <option value="all">Tất cả nhân viên</option>
+        </select>
+      </div>
+      <button class="reset-btn" onclick="dashboard.resetFilters()">Đặt lại</button>
+    </div>
+  </header>
+
+  <section class="kpi-row">
+    <div class="kpi-card c-total">
+      <div class="kpi-label">Tổng công việc</div>
+      <div class="kpi-value" id="kpi-total">0</div>
+      <div class="kpi-sub" id="kpi-total-sub">trên toàn bộ đội ngũ</div>
+    </div>
+    <div class="kpi-card c-done">
+      <div class="kpi-label">Đã hoàn thành</div>
+      <div class="kpi-value" id="kpi-done">0</div>
+      <div class="kpi-sub" id="kpi-done-sub">0% tổng số công việc</div>
+    </div>
+    <div class="kpi-card c-progress">
+      <div class="kpi-label">Đang thực hiện</div>
+      <div class="kpi-value" id="kpi-progress">0</div>
+      <div class="kpi-sub" id="kpi-progress-sub">bao gồm chưa bắt đầu</div>
+    </div>
+    <div class="kpi-card c-late">
+      <div class="kpi-label">Trễ hạn</div>
+      <div class="kpi-value" id="kpi-late">0</div>
+      <div class="kpi-sub" id="kpi-late-sub">cần xử lý ngay</div>
+    </div>
+  </section>
+
+  <section class="chart-row">
+    <div class="chart-container">
+      <h3>Phân bổ theo trạng thái</h3>
+      <canvas id="statusChart"></canvas>
+    </div>
+    <div class="chart-container">
+      <h3>Tỷ lệ hoàn thành theo nhân viên</h3>
+      <canvas id="employeeChart"></canvas>
+    </div>
+    <div class="chart-container">
+      <h3>Khối lượng công việc theo tuần</h3>
+      <canvas id="weeklyChart"></canvas>
+    </div>
+  </section>
+
+  <section class="table-section">
+    <div class="table-section-header">
+      <h3>Danh sách công việc chi tiết</h3>
+      <span class="table-count"><span id="table-count">0</span> công việc</span>
+    </div>
+    <div id="table-container"></div>
+  </section>
+
+  <footer class="dashboard-footer">
+    <span>Dữ liệu mẫu minh họa &middot; Cập nhật lúc: <span id="data-date"></span></span>
+  </footer>
+</div>
+
+<script>
+const COLORS = ['#4C6FFF','#22B8A0','#F4A93B','#E85D5D','#8B6FE8','#3BB4E5'];
+
+/* ---------- Sample data generation (deterministic) ---------- */
+const EMPLOYEES = [
+  {name:'Nguyễn Văn An',   dept:'Kinh doanh'},
+  {name:'Trần Thị Bình',   dept:'Kinh doanh'},
+  {name:'Ngô Thị Lan',     dept:'Kinh doanh'},
+  {name:'Lê Văn Cường',    dept:'Marketing'},
+  {name:'Phạm Thị Dung',   dept:'Marketing'},
+  {name:'Hoàng Văn Em',    dept:'Kỹ thuật'},
+  {name:'Vũ Thị Giang',    dept:'Kỹ thuật'},
+  {name:'Đặng Văn Hùng',   dept:'Kỹ thuật'},
+  {name:'Bùi Thị Yến',     dept:'Nhân sự'},
+  {name:'Đỗ Văn Khoa',     dept:'Nhân sự'},
+];
+
+const TASK_POOL = {
+  'Kinh doanh': ['Gọi khách hàng tiềm năng','Chuẩn bị báo giá','Đàm phán hợp đồng','Theo dõi đơn hàng','Báo cáo doanh số tuần','Chăm sóc khách hàng VIP'],
+  'Marketing': ['Lên kế hoạch nội dung MXH','Thiết kế banner quảng cáo','Phân tích hiệu quả chiến dịch','Viết bài blog SEO','Tổ chức sự kiện ra mắt','Quản lý fanpage'],
+  'Kỹ thuật': ['Sửa lỗi hệ thống thanh toán','Phát triển tính năng mới','Viết tài liệu kỹ thuật','Kiểm thử ứng dụng di động','Tối ưu hiệu năng server','Review code đồng nghiệp'],
+  'Nhân sự': ['Đăng tin tuyển dụng','Phỏng vấn ứng viên','Cập nhật hồ sơ nhân viên','Tổ chức đào tạo nội bộ','Đánh giá hiệu suất quý','Xử lý chế độ phúc lợi'],
+};
+
+const PRIORITIES = ['Cao','Trung bình','Thấp'];
+const TODAY = new Date('2026-07-25');
+
+function addDays(date, days){ const d = new Date(date); d.setDate(d.getDate()+days); return d; }
+function fmtDate(d){ return d.toISOString().slice(0,10); }
+
+let DATA = [];
+let taskId = 1;
+EMPLOYEES.forEach((emp, ei) => {
+  const pool = TASK_POOL[emp.dept];
+  pool.forEach((title, ti) => {
+    const offsetDays = (ei * 7 + ti * 5) % 62 - 21; // spread roughly -21 .. +40
+    const due = addDays(TODAY, offsetDays);
+    const start = addDays(due, -(6 + (ti * 3) % 10));
+    let status, progress;
+    if (offsetDays < 0) {
+      const missed = (ei + ti) % 3 !== 0;
+      if (missed) { status = 'Trễ hạn'; progress = 20 + ((ei + ti) * 13) % 60; }
+      else { status = 'Hoàn thành'; progress = 100; }
+    } else if (offsetDays <= 4) {
+      status = 'Đang thực hiện'; progress = 40 + ((ei + ti) * 11) % 55;
+    } else if (offsetDays <= 14) {
+      if ((ei + ti) % 2 === 0) { status = 'Đang thực hiện'; progress = 10 + ((ei + ti) * 7) % 50; }
+      else { status = 'Chưa bắt đầu'; progress = 0; }
+    } else {
+      status = 'Chưa bắt đầu'; progress = 0;
+    }
+    const priority = PRIORITIES[(ei + ti) % 3];
+    DATA.push({
+      id: 'CV-' + String(taskId++).padStart(3,'0'),
+      title, employee: emp.name, dept: emp.dept,
+      priority, status, progress,
+      start: fmtDate(start), due: fmtDate(due),
+    });
+  });
+});
+
+/* ---------- Helpers ---------- */
+function formatValue(value, format){
+  switch(format){
+    case 'percent': return value.toFixed(0) + '%';
+    case 'number': return value.toLocaleString('vi-VN');
+    default: return String(value);
+  }
+}
+function statusBadgeClass(status){
+  return {'Hoàn thành':'badge-done','Đang thực hiện':'badge-progress','Chưa bắt đầu':'badge-notstarted','Trễ hạn':'badge-late'}[status] || '';
+}
+function priorityBadgeClass(p){
+  return {'Cao':'badge-high','Trung bình':'badge-medium','Thấp':'badge-low'}[p] || '';
+}
+
+/* ---------- Dashboard ---------- */
+class Dashboard{
+  constructor(data){
+    this.rawData = data;
+    this.filteredData = data;
+    this.sortCol = 'due';
+    this.sortDir = 'asc';
+    this.charts = {};
+    this.init();
+  }
+  init(){
+    this.setupFilters();
+    document.getElementById('data-date').textContent = TODAY.toLocaleDateString('vi-VN');
+    this.renderAll();
+  }
+  setupFilters(){
+    const depts = [...new Set(this.rawData.map(d => d.dept))].sort();
+    const statuses = [...new Set(this.rawData.map(d => d.status))];
+    const emps = [...new Set(this.rawData.map(d => d.employee))].sort();
+    this.fillSelect('filter-dept', depts);
+    this.fillSelect('filter-status', statuses);
+    this.fillSelect('filter-emp', emps);
+  }
+  fillSelect(id, values){
+    const sel = document.getElementById(id);
+    values.forEach(v => {
+      const opt = document.createElement('option');
+      opt.value = v; opt.textContent = v;
+      sel.appendChild(opt);
+    });
+  }
+  getVal(id){
+    const v = document.getElementById(id).value;
+    return v === 'all' ? null : v;
+  }
+  resetFilters(){
+    document.getElementById('filter-dept').value = 'all';
+    document.getElementById('filter-status').value = 'all';
+    document.getElementById('filter-emp').value = 'all';
+    this.applyFilters();
+  }
+  applyFilters(){
+    const dept = this.getVal('filter-dept');
+    const status = this.getVal('filter-status');
+    const emp = this.getVal('filter-emp');
+    this.filteredData = this.rawData.filter(row => {
+      if (dept && row.dept !== dept) return false;
+      if (status && row.status !== status) return false;
+      if (emp && row.employee !== emp) return false;
+      return true;
+    });
+    this.renderAll();
+  }
+  renderAll(){
+    this.renderKPIs();
+    this.renderCharts();
+    this.renderTable();
+  }
+  renderKPIs(){
+    const d = this.filteredData;
+    const total = d.length;
+    const done = d.filter(t => t.status === 'Hoàn thành').length;
+    const late = d.filter(t => t.status === 'Trễ hạn').length;
+    const progress = d.filter(t => t.status === 'Đang thực hiện' || t.status === 'Chưa bắt đầu').length;
+
+    document.getElementById('kpi-total').textContent = formatValue(total,'number');
+    document.getElementById('kpi-done').textContent = formatValue(done,'number');
+    document.getElementById('kpi-progress').textContent = formatValue(progress,'number');
+    document.getElementById('kpi-late').textContent = formatValue(late,'number');
+    document.getElementById('kpi-done-sub').textContent = (total ? (done/total*100).toFixed(0) : 0) + '% tổng số công việc';
+    document.getElementById('kpi-late-sub').textContent = late > 0 ? 'cần xử lý ngay' : 'không có công việc trễ hạn';
+  }
+  renderCharts(){
+    if (Object.keys(this.charts).length === 0){
+      this.charts.status = this.createStatusChart();
+      this.charts.employee = this.createEmployeeChart();
+      this.charts.weekly = this.createWeeklyChart();
+    } else {
+      this.updateStatusChart();
+      this.updateEmployeeChart();
+      this.updateWeeklyChart();
+    }
+  }
+  statusCounts(){
+    const order = ['Hoàn thành','Đang thực hiện','Chưa bắt đầu','Trễ hạn'];
+    return order.map(s => this.filteredData.filter(t => t.status === s).length);
+  }
+  createStatusChart(){
+    const ctx = document.getElementById('statusChart').getContext('2d');
+    return new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Hoàn thành','Đang thực hiện','Chưa bắt đầu','Trễ hạn'],
+        datasets: [{ data: this.statusCounts(), backgroundColor: ['#22B8A0','#F4A93B','#9aa1b5','#E85D5D'], borderColor:'#fff', borderWidth:2 }]
+      },
+      options: {
+        responsive:true, maintainAspectRatio:false, cutout:'62%',
+        plugins:{ legend:{ position:'bottom', labels:{ usePointStyle:true, padding:12, font:{size:11} } } }
+      }
+    });
+  }
+  updateStatusChart(){
+    this.charts.status.data.datasets[0].data = this.statusCounts();
+    this.charts.status.update('none');
+  }
+  employeeStats(){
+    const emps = [...new Set(this.filteredData.map(t => t.employee))];
+    const stats = emps.map(name => {
+      const tasks = this.filteredData.filter(t => t.employee === name);
+      const done = tasks.filter(t => t.status === 'Hoàn thành').length;
+      return { name, rate: tasks.length ? Math.round(done/tasks.length*100) : 0, total: tasks.length };
+    });
+    stats.sort((a,b) => b.rate - a.rate);
+    return stats;
+  }
+  createEmployeeChart(){
+    const stats = this.employeeStats();
+    const ctx = document.getElementById('employeeChart').getContext('2d');
+    return new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: stats.map(s => s.name),
+        datasets: [{ label:'Tỷ lệ hoàn thành', data: stats.map(s => s.rate), backgroundColor:'#4C6FFFCC', borderRadius:4 }]
+      },
+      options: {
+        responsive:true, maintainAspectRatio:false, indexAxis:'y',
+        plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: c => c.parsed.x + '% hoàn thành' } } },
+        scales:{ x:{ beginAtZero:true, max:100, ticks:{ callback:v => v+'%' } }, y:{ ticks:{ font:{size:11} } } }
+      }
+    });
+  }
+  updateEmployeeChart(){
+    const stats = this.employeeStats();
+    this.charts.employee.data.labels = stats.map(s => s.name);
+    this.charts.employee.data.datasets[0].data = stats.map(s => s.rate);
+    this.charts.employee.update('none');
+  }
+  weeklyBuckets(){
+    const weeks = [];
+    for (let i = -3; i <= 4; i++){
+      const start = addDays(TODAY, i*7 - TODAY.getDay());
+      const end = addDays(start, 6);
+      weeks.push({ label:'T'+fmtDate(start).slice(5), start, end });
+    }
+    const dueCount = weeks.map(w => this.filteredData.filter(t => t.due >= fmtDate(w.start) && t.due <= fmtDate(w.end)).length);
+    const doneCount = weeks.map(w => this.filteredData.filter(t => t.status==='Hoàn thành' && t.due >= fmtDate(w.start) && t.due <= fmtDate(w.end)).length);
+    return { labels: weeks.map(w => w.label), dueCount, doneCount };
+  }
+  createWeeklyChart(){
+    const { labels, dueCount, doneCount } = this.weeklyBuckets();
+    const ctx = document.getElementById('weeklyChart').getContext('2d');
+    return new Chart(ctx, {
+      data: {
+        labels,
+        datasets: [
+          { type:'bar', label:'Tổng đến hạn', data: dueCount, backgroundColor:'#4C6FFF55', borderRadius:4 },
+          { type:'line', label:'Đã hoàn thành', data: doneCount, borderColor:'#22B8A0', backgroundColor:'#22B8A0', borderWidth:2, tension:0.3, pointRadius:3 }
+        ]
+      },
+      options: {
+        responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{ position:'bottom', labels:{ usePointStyle:true, font:{size:11} } } },
+        scales:{ x:{ grid:{display:false} }, y:{ beginAtZero:true, ticks:{ stepSize:1 } } }
+      }
+    });
+  }
+  updateWeeklyChart(){
+    const { labels, dueCount, doneCount } = this.weeklyBuckets();
+    this.charts.weekly.data.labels = labels;
+    this.charts.weekly.data.datasets[0].data = dueCount;
+    this.charts.weekly.data.datasets[1].data = doneCount;
+    this.charts.weekly.update('none');
+  }
+  renderTable(){
+    document.getElementById('table-count').textContent = this.filteredData.length;
+    const columns = [
+      {field:'id', label:'Mã CV'},
+      {field:'title', label:'Công việc'},
+      {field:'employee', label:'Nhân viên'},
+      {field:'dept', label:'Phòng ban'},
+      {field:'priority', label:'Ưu tiên'},
+      {field:'status', label:'Trạng thái'},
+      {field:'due', label:'Hạn chót'},
+      {field:'progress', label:'Tiến độ'},
+    ];
+    const sorted = [...this.filteredData].sort((a,b) => {
+      const av = a[this.sortCol], bv = b[this.sortCol];
+      const cmp = av < bv ? -1 : av > bv ? 1 : 0;
+      return this.sortDir === 'asc' ? cmp : -cmp;
+    });
+    let html = '<table class="data-table"><thead><tr>';
+    columns.forEach(col => {
+      const arrow = this.sortCol === col.field ? (this.sortDir === 'asc' ? ' ▲' : ' ▼') : '';
+      html += `<th onclick="dashboard.sortTable('${col.field}')">${col.label}${arrow}</th>`;
+    });
+    html += '</tr></thead><tbody>';
+    sorted.forEach(row => {
+      html += '<tr>';
+      html += `<td>${row.id}</td>`;
+      html += `<td>${row.title}</td>`;
+      html += `<td>${row.employee}</td>`;
+      html += `<td>${row.dept}</td>`;
+      html += `<td><span class="badge ${priorityBadgeClass(row.priority)}">${row.priority}</span></td>`;
+      html += `<td><span class="badge ${statusBadgeClass(row.status)}">${row.status}</span></td>`;
+      html += `<td>${row.due}</td>`;
+      html += `<td><div class="progress-wrap"><div class="progress-bar"><div class="progress-fill" style="width:${row.progress}%"></div></div><span class="progress-text">${row.progress}%</span></div></td>`;
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+    document.getElementById('table-container').innerHTML = html;
+  }
+  sortTable(field){
+    if (this.sortCol === field) this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';
+    else { this.sortCol = field; this.sortDir = 'asc'; }
+    this.renderTable();
+  }
+}
+
+const dashboard = new Dashboard(DATA);
+</script>
+</body>
+</html>

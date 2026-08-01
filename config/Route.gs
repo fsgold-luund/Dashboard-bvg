@@ -35,6 +35,11 @@ var Route = (function () {
     reg_(map, A.DASHBOARD_STATUS_CHART, DashboardController, 'getStatusChartData', P.DASHBOARD_VIEW);
     reg_(map, A.DASHBOARD_WORKLOAD_CHART, DashboardController, 'getWorkloadChartData', P.DASHBOARD_VIEW);
     reg_(map, A.DASHBOARD_DEADLINE_LIST, DashboardController, 'getDeadlineList', P.DASHBOARD_VIEW);
+    reg_(map, A.DASHBOARD_DEPARTMENT_LIST, DashboardController, 'getDepartmentList', P.DASHBOARD_VIEW);
+    reg_(map, A.DASHBOARD_WORKLOAD_TREEMAP, DashboardController, 'getWorkloadTreemap', P.DASHBOARD_VIEW);
+    reg_(map, A.DASHBOARD_EMPLOYEE_STATUS, DashboardController, 'getEmployeeStatusDistribution', P.DASHBOARD_VIEW);
+    reg_(map, A.DASHBOARD_GENDER_DISTRIBUTION, DashboardController, 'getGenderDistribution', P.DASHBOARD_VIEW);
+    reg_(map, A.DASHBOARD_DEPARTMENT_TABLE, DashboardController, 'getDepartmentTable', P.DASHBOARD_VIEW);
 
     reg_(map, A.TASK_LIST, TaskController, 'list', P.TASK_VIEW);
     reg_(map, A.TASK_GET_BY_ID, TaskController, 'getById', P.TASK_VIEW);
