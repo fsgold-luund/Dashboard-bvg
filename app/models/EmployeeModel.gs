@@ -7,7 +7,7 @@ var EmployeeModel = (function () {
   var SHEET = Constant.SHEET_NAME.EMPLOYEE;
 
   var UPDATE_FIELD_MAP = {
-    fullName: 'FullName', gender: 'Gender', avatar: 'Avatar', phone: 'Phone', companyId: 'CompanyID',
+    fullName: 'FullName', avatar: 'Avatar', phone: 'Phone', companyId: 'CompanyID',
     departmentId: 'DepartmentID', teamId: 'TeamID', position: 'Position',
     joinDate: 'JoinDate', status: 'Status'
   };
@@ -36,37 +36,6 @@ var EmployeeModel = (function () {
       });
     },
 
-    // Không phân trang — phục vụ Dashboard tổng hợp (đếm, group by) chứ không phải màn hình danh sách.
-    list: function (filters) {
-      return DatabaseModel.find(SHEET, buildFilter_(filters));
-    },
-
-    getStatusDistribution: function (filters) {
-      var employees = DatabaseModel.find(SHEET, buildFilter_(filters));
-      var grouped = Helper.groupBy(employees, function (e) { return e.Status; });
-      return Object.keys(grouped).map(function (status) {
-        return { label: status, value: grouped[status].length };
-      });
-    },
-
-    // Trả về {departmentId, male, female, other, total} theo từng phòng ban —
-    // Controller tự resolve tên phòng ban hiển thị.
-    getGenderDistribution: function (filters) {
-      var employees = DatabaseModel.find(SHEET, buildFilter_(filters));
-      var G = Constant.GENDER;
-      var grouped = Helper.groupBy(employees, function (e) { return e.DepartmentID || ''; });
-      return Object.keys(grouped).map(function (departmentId) {
-        var emps = grouped[departmentId];
-        return {
-          departmentId: departmentId,
-          male: emps.filter(function (e) { return e.Gender === G.MALE; }).length,
-          female: emps.filter(function (e) { return e.Gender === G.FEMALE; }).length,
-          other: emps.filter(function (e) { return e.Gender && e.Gender !== G.MALE && e.Gender !== G.FEMALE; }).length,
-          total: emps.length
-        };
-      });
-    },
-
     getById: function (employeeId) {
       var employee = DatabaseModel.getById(SHEET, employeeId);
       if (!employee || employee.Status === Constant.ENTITY_STATUS.DELETED) return null;
@@ -81,7 +50,6 @@ var EmployeeModel = (function () {
       return DatabaseModel.insert(SHEET, {
         EmployeeCode: data.employeeCode || ('NV' + Date.now().toString().slice(-6)),
         FullName: data.fullName,
-        Gender: data.gender || '',
         Avatar: data.avatar || '',
         Phone: data.phone || '',
         CompanyID: data.companyId,

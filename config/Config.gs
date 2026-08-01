@@ -70,10 +70,6 @@ var Config = (function () {
       return getRequiredString_('APP_SECRET');
     },
 
-    getWebhookSecret: function () {
-      return getRequiredString_('WEBHOOK_SECRET');
-    },
-
     getSessionTimeoutMinutes: function () {
       return getNumber_('SESSION_TIMEOUT_MINUTES', DEFAULTS.SESSION_TIMEOUT_MINUTES);
     },
