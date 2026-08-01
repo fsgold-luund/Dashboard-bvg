@@ -19,24 +19,6 @@ function doGet(e) {
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
-// doPost — cổng Data-In cho hệ thống bên ngoài (webhook), xem config/Webhook.gs cho phần xác thực
-// bằng WEBHOOK_SECRET và danh sách action được phép. Trả JSON thay vì HtmlOutput vì đây là API,
-// không phải trang xem trong trình duyệt.
-function doPost(e) {
-  var responseBody;
-  try {
-    var data = Webhook.handle(e.postData && e.postData.contents);
-    responseBody = { success: true, data: data };
-  } catch (err) {
-    var code = err.code || Constant.ERROR_CODE.SERVER_ERROR;
-    var message = err.message || 'Đã xảy ra lỗi hệ thống.';
-    AppLogger.writeError('webhook.doPost', code, message);
-    responseBody = { success: false, error: { code: code, message: message } };
-  }
-  return ContentService.createTextOutput(JSON.stringify(responseBody))
-    .setMimeType(ContentService.MimeType.JSON);
-}
-
 // Dùng trong template HTML: <?!= include('app/views/components/modal') ?>
 function include(filename) {
   return HtmlService.createHtmlOutputFromFile(filename).getContent();
