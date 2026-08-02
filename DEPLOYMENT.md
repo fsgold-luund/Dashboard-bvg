@@ -36,6 +36,7 @@ Mở project trên `script.google.com` → biểu tượng bánh răng (Project 
 |---|---|---|
 | `SPREADSHEET_ID` | Có | ID Sheet ở bước 2 |
 | `APP_SECRET` | Có | Chuỗi bí mật tự đặt (dùng ký HMAC action-token) — vd. sinh bằng `openssl rand -hex 32` |
+| `WEBHOOK_SECRET` | Có | Chuỗi bí mật riêng cho endpoint `doPost` (Data-In từ hệ thống ngoài) — sinh độc lập với `APP_SECRET`, vd. `openssl rand -hex 32`. Xem mục 10. |
 | `ATTACHMENT_FOLDER_ID` | Có | Folder ID ở bước 2 |
 | `INITIAL_COMPANY_NAME` | Không | Tên công ty khi seed lần đầu (mặc định "Công ty của bạn") |
 | `INITIAL_ADMIN_EMAIL` | Không* | Email Super Admin đầu tiên |
@@ -81,3 +82,34 @@ Vì hệ thống đang chạy trên Gmail cá nhân (không phải Google Worksp
 ## 9. Gợi ý môi trường Dev/Prod
 
 Dùng 2 Google Sheet + 2 Apps Script project riêng (dev và prod), mỗi project có `.clasp.json`/Script Properties riêng. `clasp` hỗ trợ nhiều project bằng cách giữ nhiều thư mục `.clasp.json` khác nhau hoặc dùng `clasp switch`/dotfile riêng theo môi trường.
+
+## 10. Webhook Data-In (doPost)
+
+Ngoài Web App (`doGet`, dùng cho người dùng đăng nhập qua trình duyệt), project còn expose `doPost(e)` (xem `app/Main.gs` + `config/Webhook.gs`) để hệ thống ngoài (CRM, form, Zapier/Make, script khác...) ghi dữ liệu vào Sheet mà không cần đăng nhập.
+
+- Xác thực bằng property `WEBHOOK_SECRET` (khác `APP_SECRET`) — gửi trong body, không phải header/query string, để tránh lộ qua log truy cập.
+- Chỉ 3 action được phép: `task.create`, `task.updateStatus`, `employee.create` (danh sách `ALLOWED_ACTIONS` trong `config/Webhook.gs`) — mọi request cho action khác bị từ chối, kể cả khi secret đúng.
+- Cùng URL `.../exec` như Web App, gọi bằng `POST` thay vì mở trình duyệt.
+
+Ví dụ gọi từ bên ngoài:
+
+```bash
+curl -X POST "https://script.google.com/macros/s/AKfycb.../exec" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "secret": "<WEBHOOK_SECRET>",
+    "action": "task.create",
+    "data": {
+      "title": "Công việc từ hệ thống ngoài",
+      "assigneeId": "EMP-xxxxxxxx",
+      "dueDate": "2026-08-15",
+      "priority": "High"
+    }
+  }'
+```
+
+Response luôn là JSON `{ "success": true, "data": {...} }` hoặc `{ "success": false, "error": { "code", "message" } }` — không bao giờ trả HTML, kể cả khi lỗi.
+
+Muốn mở thêm action cho webhook: thêm vào `ALLOWED_ACTIONS` trong `config/Webhook.gs`, cân nhắc kỹ vì action đó sẽ chạy dưới `SYSTEM_CONTEXT` (bỏ qua toàn bộ kiểm tra quyền theo Role/Permission của Middleware).
+
+**Lưu ý cho Sheet đã tạo trước khi có cột `Gender`:** Employee sheet vừa được bổ sung cột `Gender` (phục vụ biểu đồ "Tỷ lệ giới tính theo phòng ban" trên Dashboard). Nếu Sheet Employee đã tồn tại từ trước, `Database.ensureSheetsExist()` sẽ không tự thêm cột cho sheet đã có — cần tự thêm cột `Gender` (giá trị `Male`/`Female`) vào đúng vị trí sau `FullName` trong Sheet, hoặc chấp nhận để trống (biểu đồ giới tính sẽ hiển thị 0% cho các phòng ban chưa có dữ liệu).
