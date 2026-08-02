@@ -49,7 +49,7 @@ var Database = (function () {
 
   SCHEMA[SN.EMPLOYEE] = {
     primaryKey: 'EmployeeID',
-    columns: ['EmployeeID', 'EmployeeCode', 'FullName', 'Avatar', 'Phone', 'CompanyID',
+    columns: ['EmployeeID', 'EmployeeCode', 'FullName', 'Gender', 'Avatar', 'Phone', 'CompanyID',
       'DepartmentID', 'TeamID', 'Position', 'JoinDate', 'Status', 'CreatedAt', 'UpdatedAt']
   };
 

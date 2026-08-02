@@ -1,4 +1,5 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-chart-treemap@3"></script>
 <script>
 var UIChart = {
   charts: {},
@@ -25,6 +26,84 @@ var UIChart = {
       options: {
         plugins: { legend: { display: false } },
         scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+      }
+    });
+  },
+
+  // tree: [{department, team, value}, ...] — nhóm 2 cấp Phòng ban -> Team, ô càng lớn càng nhiều công việc.
+  renderTreemap: function (canvasId, tree) {
+    var ctx = document.getElementById(canvasId);
+    if (!ctx) return;
+    if (UIChart.charts[canvasId]) UIChart.charts[canvasId].destroy();
+    var palette = UIChart.palette;
+    UIChart.charts[canvasId] = new Chart(ctx, {
+      type: 'treemap',
+      data: {
+        datasets: [{
+          tree: tree,
+          key: 'value',
+          groups: ['department', 'team'],
+          spacing: 1,
+          borderWidth: 2,
+          borderColor: '#fff',
+          backgroundColor: function (c) {
+            if (!c.raw) return palette[0];
+            var deptLabel = (c.raw.g || (c.raw._data && c.raw._data.department)) || '';
+            var idx = 0;
+            for (var i = 0; i < tree.length; i++) { if (tree[i].department === deptLabel) { idx = i % palette.length; break; } }
+            return palette[idx] + (c.raw.isLeaf ? 'CC' : '55');
+          },
+          labels: {
+            display: true,
+            color: '#fff',
+            font: { size: 11 },
+            formatter: function (c) {
+              if (!c.raw) return '';
+              var label = c.raw.g || '';
+              return label ? (label + '\n' + c.raw.v) : '';
+            }
+          }
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              title: function () { return ''; },
+              label: function (c) { return (c.raw.g || '') + ': ' + c.raw.v + ' công việc'; }
+            }
+          }
+        }
+      }
+    });
+  },
+
+  // labels: tên phòng ban; malePct/femalePct: mảng % cùng độ dài — bar ngang xếp chồng đến 100%.
+  renderStackedBar: function (canvasId, labels, malePct, femalePct) {
+    var ctx = document.getElementById(canvasId);
+    if (!ctx) return;
+    if (UIChart.charts[canvasId]) UIChart.charts[canvasId].destroy();
+    UIChart.charts[canvasId] = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [
+          { label: 'Nam', data: malePct, backgroundColor: '#0C447C', borderRadius: 3 },
+          { label: 'Nữ', data: femalePct, backgroundColor: '#534AB7', borderRadius: 3 }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+        plugins: {
+          legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 12 } } },
+          tooltip: { callbacks: { label: function (c) { return c.dataset.label + ': ' + c.parsed.x + '%'; } } }
+        },
+        scales: {
+          x: { stacked: true, min: 0, max: 100, ticks: { callback: function (v) { return v + '%'; } } },
+          y: { stacked: true, ticks: { font: { size: 11 } } }
+        }
       }
     });
   },
